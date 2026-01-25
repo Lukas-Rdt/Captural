@@ -16,7 +16,6 @@ class AppManager {
     this.titleEl = document.getElementById("captcha-step-title");
     this.instrEl = document.getElementById("captcha-instruction");
     this.spinner = document.getElementById("loading-spinner");
-    this.timerEl = document.getElementById("captcha-timer");
 
     // Modules
     this.puzzleModule = new PuzzleModule(this.canvas);
@@ -27,14 +26,11 @@ class AppManager {
     this.isRunning = false;
     this.startTime = 0;
     
-    // Data Collection for Dashboard
     this.sessionData = {
       puzzleTime: 0,
       objectTime: 0,
       totalTime: 0,
-      puzzleErrors: 0, // Wird vom PuzzleModul gefüllt
-      objectErrors: 0,
-      puzzleAccuracy: 100, // Dummy logik für jetzt
+      puzzleErrors: 0,
       objectAccuracy: 100,
       passed: false
     };
@@ -83,14 +79,7 @@ class AppManager {
       this.isRunning = true;
       this.loop();
     }
-    
-    else if (newState === 2) {
-      // INIT OBJECT ALIGN
-      // Save Puzzle Stats
-      const duration = (Date.now() - this.startTime) / 1000;
-      this.sessionData.puzzleTime = duration;
-      // Puzzle Errors could be read from puzzleModule if implemented
-      
+    else if (newState === 2) {      
       this.titleEl.innerText = "Step 2/2: Object Alignment";
       this.instrEl.innerText = "Use your hand to rotate the object.";
       this.spinner.classList.remove("hidden");
@@ -129,23 +118,26 @@ class AppManager {
   loop = () => {
     if (!this.isRunning) return;
 
-    // Timer Update UI
-    const elapsed = (Date.now() - this.startTime) / 1000;
-    this.timerEl.innerText = elapsed.toFixed(1) + "s";
-
     // State Logic
     if (this.state === 1) {
-      // Run Puzzle Step
       const isDone = this.puzzleModule.runStep(this.video);
       if (isDone) {
-        this.setState(3);
-        return; // Break loop for transition, setState(2) restarts logic if needed or keeps loop running
+        const duration = (Date.now() - this.startTime) / 1000;
+        this.sessionData.puzzleTime = duration;
+        this.sessionData.puzzleErrors = this.puzzleModule.puzzleErrors;
+
+        console.log(`Puzzle Done! Time: ${duration}s, Errors: ${this.sessionData.puzzleErrors}`);
+
+        this.setState(2); // change to phase 2
+        return;
       }
     } 
     else if (this.state === 2) {
-      // Run Object Step
       const isDone = this.objectModule.runStep(this.video);
       if (isDone) {
+        const duration = (Date.now() - this.startTime) / 1000;
+        this.sessionData.objectTime = duration;
+        
         this.setState(3);
         return;
       }

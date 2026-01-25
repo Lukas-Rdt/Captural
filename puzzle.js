@@ -129,6 +129,8 @@ export class PuzzleModule {
     this.canvasElement = canvasElement;
     this.ctx = this.canvasElement.getContext("2d");
     this.drawUtils = new DrawingUtils(this.ctx);
+
+    this.puzzleErrors = 0;
   }
 
   /**
@@ -367,6 +369,11 @@ export class PuzzleModule {
       p.y = y;
       p.snappedRow = r;
       p.snappedCol = c;
+
+      if (!p.isCorrect()) {
+          this.puzzleErrors++;
+          console.log("Fehlerhafter Move! Total Errors:", this.puzzleErrors);
+      }
     }
   }
 
