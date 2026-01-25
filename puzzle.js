@@ -121,17 +121,13 @@ class PuzzlePiece {
 
 // --- MAIN MODULE CLASS ---
 export class PuzzleModule {
-  constructor() {
+  constructor(canvasElement) {
     this.handLandmarker = null;
     this.puzzlePieces = [];
     this.sourceImage = null;
     
-    // DOM Referenzen holen
-    this.canvasElement = document.getElementById("output_canvas");
+    this.canvasElement = canvasElement;
     this.ctx = this.canvasElement.getContext("2d");
-    this.statusText = document.getElementById("status");
-    
-    // Utilities
     this.drawUtils = new DrawingUtils(this.ctx);
   }
 
@@ -140,7 +136,6 @@ export class PuzzleModule {
    * Wird vom AppManager einmalig aufgerufen.
    */
   async init() {
-    this.statusText.innerText = "Lade Puzzle Modell...";
     
     // 1. MediaPipe laden
     const vision = await FilesetResolver.forVisionTasks(
@@ -153,22 +148,17 @@ export class PuzzleModule {
         delegate: "GPU",
       },
       runningMode: "VIDEO",
-      numHands: 2, // Reicht für Puzzle meistens
+      numHands: 2,
     });
 
-    // 2. Bild laden
-    this.statusText.innerText = "Lade Bild...";
     await this.loadPuzzleImage();
-    
-    // 3. Puzzle generieren
     this.generatePuzzlePieces();
-    
-    this.statusText.innerText = "Puzzle Bereit.";
-  }
+    }
 
   async loadPuzzleImage() {
     return new Promise((resolve) => {
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.src = IMAGE_SRC;
       img.onload = () => {
         this.sourceImage = img;
@@ -196,7 +186,7 @@ export class PuzzleModule {
    * @param {HTMLVideoElement} video - Der Video-Stream vom Manager
    * @returns {boolean} true, wenn Puzzle gelöst ist
    */
-  async runStep(video) {
+  runStep(video) {
     if (!this.handLandmarker) return false;
 
     // 1. Canvas Größe anpassen falls nötig
@@ -238,18 +228,12 @@ export class PuzzleModule {
 
     // 6. Prüfen ob gewonnen
     const allCorrect = this.puzzlePieces.every(piece => piece.isCorrect());
-    if (allCorrect) {
-        this.statusText.innerText = "PUZZLE GELÖST!";
-        this.statusText.style.color = "#0f0";
-        return true; // Signal an Manager: Fertig!
-    }
-    
-    return false; // Noch nicht fertig
+    return allCorrect;
   }
 
   // --- LOGIC HELPER ---
-
   updateGameLogic(landmarksArray, cw, ch) {
+    if(landmarksArray.length === 0) return;
     for (let handIdx = 0; handIdx < landmarksArray.length; handIdx++) {
       const landmarks = landmarksArray[handIdx];
       

@@ -3,156 +3,195 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Natural Captcha - Results</title>
+    <title>Natural Captcha Project</title>
+
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="dashboard.css" />
   </head>
   <body>
-    <div class="orb-1"></div>
-    <div class="orb-2"></div>
-
-    <div class="container">
-      <!-- Header -->
-      <div class="header">
-        <div class="status-badge passed" id="statusBadge">
-          <div class="status-dot"></div>
-          <span class="status-text" id="statusText">VERIFIED</span>
-        </div>
-        <h1 class="title">Captcha Result</h1>
-        <p class="subtitle">Your Performance</p>
-      </div>
-
-      <!-- Circular Progress -->
-      <div class="circles-container">
-        <div class="circle-item">
-          <div class="circle-wrapper">
-            <svg
-              width="140"
-              height="140"
-              viewBox="0 0 140 140"
-              class="circle-svg">
-              <circle cx="70" cy="70" r="54" class="circle-bg" />
-              <circle
-                cx="70"
-                cy="70"
-                r="54"
-                class="circle-progress purple"
-                id="puzzleCircle"
-                stroke-dasharray="339.292"
-                stroke-dashoffset="339.292" />
-            </svg>
-            <div class="circle-text-overlay">
-              <span class="circle-value" id="puzzleValue">0.0</span>
-              <span class="circle-unit">sec</span>
-            </div>
-          </div>
-          <span class="circle-label">Puzzle</span>
-        </div>
-
-        <div class="circle-item">
-          <div class="circle-wrapper">
-            <svg
-              width="140"
-              height="140"
-              viewBox="0 0 140 140"
-              class="circle-svg">
-              <circle cx="70" cy="70" r="54" class="circle-bg" />
-              <circle
-                cx="70"
-                cy="70"
-                r="54"
-                class="circle-progress violet"
-                id="objectCircle"
-                stroke-dasharray="339.292"
-                stroke-dashoffset="339.292" />
-            </svg>
-            <div class="circle-text-overlay">
-              <span class="circle-value" id="objectValue">0.0</span>
-              <span class="circle-unit">sec</span>
-            </div>
-          </div>
-          <span class="circle-label">Object Alignment</span>
-        </div>
-
-        <div class="circle-item">
-          <div class="circle-wrapper">
-            <svg
-              width="140"
-              height="140"
-              viewBox="0 0 140 140"
-              class="circle-svg">
-              <circle cx="70" cy="70" r="54" class="circle-bg" />
-              <circle
-                cx="70"
-                cy="70"
-                r="54"
-                class="circle-progress green"
-                id="totalCircle"
-                stroke-dasharray="339.292"
-                stroke-dashoffset="339.292" />
-            </svg>
-            <div class="circle-text-overlay">
-              <span class="circle-value" id="totalValue">0.0</span>
-              <span class="circle-unit">sec</span>
-            </div>
-          </div>
-          <span class="circle-label">Total</span>
-        </div>
-      </div>
-
-      <!-- Metric Cards -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-label">Accuracy</div>
-          <div class="metric-value" id="accuracyValue">0%</div>
-          <div class="metric-sub">Average of both phases</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Errors</div>
-          <div class="metric-value" id="errorsValue">0</div>
-          <div class="metric-sub" id="errorsSub">0 puzzle · 0 alignment</div>
-        </div>
-      </div>
-
-      <!-- Phase Details -->
-      <div class="phase-section">
-        <h3 class="phase-title">Phase Details</h3>
-        <div class="phase-bars">
-          <div class="phase-bar">
-            <div class="phase-bar-header">
-              <span class="phase-name">Image Puzzle</span>
-              <div class="phase-stats">
-                <span class="phase-errors" id="puzzleErrors">0 errors</span>
-                <span class="phase-time" id="puzzleTime">0.0s</span>
-              </div>
-            </div>
-            <div class="phase-bar-track">
-              <div class="phase-bar-fill" id="puzzleBar"></div>
-            </div>
-          </div>
-
-          <div class="phase-bar">
-            <div class="phase-bar-header">
-              <span class="phase-name">Object Alignment</span>
-              <div class="phase-stats">
-                <span class="phase-errors" id="objectErrors">0 errors</span>
-                <span class="phase-time" id="objectTime">0.0s</span>
-              </div>
-            </div>
-            <div class="phase-bar-track">
-              <div class="phase-bar-fill" id="objectBar"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="footer">
-        <p>Natural Captcha · NUI Project 2026</p>
+    <!-- Login -->
+    <div id="login-view" class="view-container">
+      <div class="login-card">
+        <h1>Welcome Back</h1>
+        <p>Please verify to access your dashboard.</p>
+        <button id="start-captcha-btn" class="glow-button">
+          Verify Humanity
+        </button>
       </div>
     </div>
-    <script src="dashboard.js"></script>
+
+    <!-- Catcha modal -->
+    <div id="captcha-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="captcha-step-title">Security Check</h2>
+          <span id="captcha-timer">0.0s</span>
+        </div>
+
+        <div class="canvas-wrapper">
+          <video id="webcam" autoplay playsinline style="display: none"></video>
+          <canvas id="output_canvas"></canvas>
+
+          <div id="loading-spinner" class="spinner"></div>
+        </div>
+
+        <p id="captcha-instruction" class="instruction-text">Initializing...</p>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard-view" class="view-container hidden">
+      <div class="orb-1"></div>
+      <div class="orb-2"></div>
+
+      <div class="container">
+        <div class="header">
+          <div class="status-badge passed" id="statusBadge">
+            <div class="status-dot"></div>
+            <span class="status-text" id="statusText">VERIFIED</span>
+          </div>
+          <h1 class="title">Captcha Result</h1>
+          <p class="subtitle">Your Performance</p>
+        </div>
+
+        <div class="circles-container">
+          <div class="circle-item">
+            <div class="circle-wrapper">
+              <svg
+                width="140"
+                height="140"
+                viewBox="0 0 140 140"
+                class="circle-svg">
+                <circle cx="70" cy="70" r="54" class="circle-bg" />
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="54"
+                  class="circle-progress purple"
+                  id="puzzleCircle"
+                  stroke-dasharray="339.292"
+                  stroke-dashoffset="339.292" />
+              </svg>
+              <div class="circle-text-overlay">
+                <span class="circle-value" id="puzzleValue">0.0</span>
+                <span class="circle-unit">sec</span>
+              </div>
+            </div>
+            <span class="circle-label">Puzzle</span>
+          </div>
+          <div class="circle-item">
+            <div class="circle-wrapper">
+              <svg
+                width="140"
+                height="140"
+                viewBox="0 0 140 140"
+                class="circle-svg">
+                <circle cx="70" cy="70" r="54" class="circle-bg" />
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="54"
+                  class="circle-progress violet"
+                  id="objectCircle"
+                  stroke-dasharray="339.292"
+                  stroke-dashoffset="339.292" />
+              </svg>
+              <div class="circle-text-overlay">
+                <span class="circle-value" id="objectValue">0.0</span>
+                <span class="circle-unit">sec</span>
+              </div>
+            </div>
+            <span class="circle-label">Object Alignment</span>
+          </div>
+          <div class="circle-item">
+            <div class="circle-wrapper">
+              <svg
+                width="140"
+                height="140"
+                viewBox="0 0 140 140"
+                class="circle-svg">
+                <circle cx="70" cy="70" r="54" class="circle-bg" />
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="54"
+                  class="circle-progress green"
+                  id="totalCircle"
+                  stroke-dasharray="339.292"
+                  stroke-dashoffset="339.292" />
+              </svg>
+              <div class="circle-text-overlay">
+                <span class="circle-value" id="totalValue">0.0</span>
+                <span class="circle-unit">sec</span>
+              </div>
+            </div>
+            <span class="circle-label">Total</span>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Accuracy</div>
+            <div class="metric-value" id="accuracyValue">0%</div>
+            <div class="metric-sub">Average of both phases</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Errors</div>
+            <div class="metric-value" id="errorsValue">0</div>
+            <div class="metric-sub" id="errorsSub">0 puzzle · 0 alignment</div>
+          </div>
+        </div>
+
+        <div class="phase-section">
+          <h3 class="phase-title">Phase Details</h3>
+          <div class="phase-bars">
+            <div class="phase-bar">
+              <div class="phase-bar-header">
+                <span class="phase-name">Image Puzzle</span>
+                <div class="phase-stats">
+                  <span class="phase-errors" id="puzzleErrors">0 errors</span>
+                  <span class="phase-time" id="puzzleTime">0.0s</span>
+                </div>
+              </div>
+              <div class="phase-bar-track">
+                <div class="phase-bar-fill" id="puzzleBar"></div>
+              </div>
+            </div>
+
+            <div class="phase-bar">
+              <div class="phase-bar-header">
+                <span class="phase-name">Object Alignment</span>
+                <div class="phase-stats">
+                  <span class="phase-errors" id="objectErrors">0 errors</span>
+                  <span class="phase-time" id="objectTime">0.0s</span>
+                </div>
+              </div>
+              <div class="phase-bar-track">
+                <div class="phase-bar-fill" id="objectBar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <p>Natural Captcha · NUI Project 2026</p>
+          <button
+            id="reset-btn"
+            style="
+              background: none;
+              border: none;
+              color: #555;
+              cursor: pointer;
+              margin-top: 10px;
+            ">
+            Reset Demo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/AppManager.js"></script>
   </body>
 </html>
