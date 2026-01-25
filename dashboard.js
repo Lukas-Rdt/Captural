@@ -9,6 +9,8 @@
   passed: true, // Captcha passed aka user verified?
 }; */
 
+import computeNaturalness from "./naturalCalc.js";
+
 export function updateDashboard(data) {
   const circumference = 2 * Math.PI * 54; // 339.292
 
@@ -21,6 +23,31 @@ export function updateDashboard(data) {
   } else {
     badge.className = "status-badge failed";
     statusText.textContent = "FAILED";
+  }
+
+  // Compute and display naturalness percent
+  try {
+    const nat = computeNaturalness(data || {});
+    const natPercent = nat.percent;
+
+    const subtitleEl = document.querySelector('.subtitle');
+    if (subtitleEl) {
+      let natEl = document.getElementById('naturalnessValue');
+      if (!natEl) {
+        natEl = document.createElement('div');
+        natEl.id = 'naturalnessValue';
+        natEl.className = 'naturalness-value';
+        subtitleEl.insertAdjacentElement('afterend', natEl);
+      }
+      natEl.textContent = `${natPercent}% Natural`;
+      // apply semantic class for styling/animation
+      natEl.classList.remove('naturalness-high', 'naturalness-med', 'naturalness-low');
+      if (natPercent >= 60) natEl.classList.add('naturalness-high');
+      else if (natPercent >= 30) natEl.classList.add('naturalness-med');
+      else natEl.classList.add('naturalness-low');
+    }
+  } catch (e) {
+    // ignore
   }
 
   // Animate circular progress
@@ -56,15 +83,15 @@ export function updateDashboard(data) {
 
   // Update metrics
   setTimeout(() => {
-    const avgAccuracy = Math.round(
-      (data.puzzleAccuracy + data.objectAccuracy) / 2,
-    );
+    const pAcc = Number(data.puzzleAccuracy ?? data.objectAccuracy ?? 0);
+    const oAcc = Number(data.objectAccuracy ?? data.puzzleAccuracy ?? 0);
+    const avgAccuracy = Math.round((pAcc + oAcc) / 2);
     document.getElementById("accuracyValue").textContent = avgAccuracy + "%";
 
-    const totalErrors = data.puzzleErrors + data.objectErrors;
+    const totalErrors = (Number(data.puzzleErrors) || 0) + (Number(data.objectErrors) || 0);
     document.getElementById("errorsValue").textContent = totalErrors;
     document.getElementById("errorsSub").textContent =
-      `${data.puzzleErrors} puzzle · ${data.objectErrors} alignment`;
+      `${Number(data.puzzleErrors) || 0} puzzle · ${Number(data.objectErrors) || 0} alignment`;
   }, 900);
 
   // Update phase bars

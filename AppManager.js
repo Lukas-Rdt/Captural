@@ -128,7 +128,7 @@ class AppManager {
 
         console.log(`Puzzle Done! Time: ${duration}s, Errors: ${this.sessionData.puzzleErrors}`);
 
-        this.setState(2); // change to phase 2
+        this.setState(3); // change to phase 2
         return;
       }
     } 
