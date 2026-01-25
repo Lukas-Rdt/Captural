@@ -150,7 +150,7 @@ export class PuzzleModule {
         delegate: "GPU",
       },
       runningMode: "VIDEO",
-      numHands: 2,
+      numHands: 4,
     });
 
     await this.loadPuzzleImage();
