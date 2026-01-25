@@ -1,0 +1,223 @@
+/* login.css */
+
+.page-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  width: 100%;
+}
+
+/* Icon */
+.icon-container {
+  width: 80px;
+  height: 80px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32px;
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
+}
+
+.icon-container svg {
+  width: 40px;
+  height: 40px;
+  color: #6366f1;
+}
+
+/* Header Typography (überschreibt ggf. defaults) */
+.login-view-container .title {
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+
+.subtitle-small {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.login-view-container .subtitle {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 48px;
+  line-height: 1.5;
+}
+
+/* Instructions Box */
+.instructions {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 40px;
+  text-align: left;
+}
+
+.instruction-title {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.instruction-item:last-child {
+  margin-bottom: 0;
+}
+
+.instruction-number {
+  width: 24px;
+  height: 24px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+/* Login Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+  width: 100%;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.input-group label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.input-group input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-family: "DM Sans", sans-serif;
+  color: #ffffff;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input-group input.valid {
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.input-group input.invalid {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.input-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.2s ease;
+  min-height: 1.2em; /* Prevent layout jump */
+}
+
+.input-hint.valid {
+  color: #10b981;
+}
+
+.input-hint.invalid {
+  color: #ef4444;
+}
+
+/* Start Button */
+.start-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  font-family: "DM Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 18px 48px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.4);
+}
+
+.start-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.5);
+}
+
+.start-button:active {
+  transform: translateY(0);
+}
+
+.start-button:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.start-button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.start-button svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.start-button:hover svg {
+  transform: translateX(4px);
+}

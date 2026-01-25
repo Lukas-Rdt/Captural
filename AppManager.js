@@ -8,6 +8,12 @@ class AppManager {
     this.loginView = document.getElementById("login-view");
     this.dashboardView = document.getElementById("dashboard-view");
     this.modal = document.getElementById("captcha-modal");
+
+    this.usernameInput = document.getElementById('username');
+    this.passwordInput = document.getElementById('password');
+    this.usernameHint = document.getElementById('usernameHint');
+    this.passwordHint = document.getElementById('passwordHint');
+    this.startBtn = document.getElementById('start-captcha-btn');
     
     this.video = document.getElementById("webcam");
     this.canvas = document.getElementById("output_canvas");
@@ -39,8 +45,46 @@ class AppManager {
   }
 
   bindEvents() {
+    if (this.usernameInput && this.passwordInput) {
+        this.usernameInput.addEventListener('input', () => this.validateInput(this.usernameInput, this.usernameHint, false));
+        this.passwordInput.addEventListener('input', () => this.validateInput(this.passwordInput, this.passwordHint, true));
+    }
+
     document.getElementById("start-captcha-btn").addEventListener("click", () => this.startCaptchaSequence());
     document.getElementById("reset-btn").addEventListener("click", () => location.reload());
+  }
+
+  validateInput(input, hint, showInitialHint = true) {
+    const MIN_LENGTH = 6;
+    const value = input.value;
+    const isValid = value.length >= MIN_LENGTH;
+    
+    if (value.length === 0) {
+      input.classList.remove('valid', 'invalid');
+      hint.classList.remove('valid', 'invalid');
+      hint.textContent = showInitialHint ? 'Mínimo 6 caracteres' : '';
+    } else if (isValid) {
+      input.classList.remove('invalid');
+      input.classList.add('valid');
+      hint.classList.remove('invalid');
+      hint.classList.add('valid');
+      hint.textContent = '✓';
+    } else {
+      input.classList.remove('valid');
+      input.classList.add('invalid');
+      hint.classList.remove('valid');
+      hint.classList.add('invalid');
+      hint.textContent = `${MIN_LENGTH - value.length} más caracteres necesarios`;
+    }
+    
+    this.checkFormValid();
+  }
+
+  checkFormValid() {
+    const MIN_LENGTH = 6;
+    const isValid = this.usernameInput.value.length >= MIN_LENGTH && 
+                    this.passwordInput.value.length >= MIN_LENGTH;
+    this.startBtn.disabled = !isValid;
   }
 
   async startCaptchaSequence() {
@@ -69,8 +113,8 @@ class AppManager {
         }
       }
 
-      this.titleEl.innerText = "Step 1/2: Puzzle";
-      this.instrEl.innerText = "Pinch pieces to solve the puzzle.";
+      this.titleEl.innerText = "Paso 1/2: Rompecabezas";
+      this.instrEl.innerText = "Pellizca las piezas para resolver el rompecabezas.";
       
       await this.puzzleModule.init();
       
@@ -80,8 +124,8 @@ class AppManager {
       this.loop();
     }
     else if (newState === 2) {      
-      this.titleEl.innerText = "Step 2/2: Object Alignment";
-      this.instrEl.innerText = "Use your hand to rotate the object.";
+      this.titleEl.innerText = "Paso 2/2: Alineación de Objeto";
+      this.instrEl.innerText = "Usa tu mano para rotar el objeto.";
       this.spinner.classList.remove("hidden");
 
       await this.objectModule.init();
@@ -137,7 +181,7 @@ class AppManager {
       if (isDone) {
         const duration = (Date.now() - this.startTime) / 1000;
         this.sessionData.objectTime = duration;
-        
+
         this.setState(3);
         return;
       }

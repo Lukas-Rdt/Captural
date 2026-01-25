@@ -19,10 +19,10 @@ export function updateDashboard(data) {
   const statusText = document.getElementById("statusText");
   if (data.passed) {
     badge.className = "status-badge passed";
-    statusText.textContent = "VERIFIED";
+    statusText.textContent = "VERIFICADO";
   } else {
     badge.className = "status-badge failed";
-    statusText.textContent = "FAILED";
+    statusText.textContent = "FALLIDO";
   }
 
   // Compute and display naturalness percent
