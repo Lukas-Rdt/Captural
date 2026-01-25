@@ -5,7 +5,7 @@ import {
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
 // --- KONFIGURATION ---
-const IMAGE_SRC = import.meta.env.BASE_URL + "images/apple.jpg"; // Pfad sicherstellen!
+const IMAGE_SRC = import.meta.env.BASE_URL + "images/apple.jpg";
 const ROWS = 3;
 const COLS = 3;
 const SNAP_DIST_THRESHOLD = 0.1; // 0-1 snap 

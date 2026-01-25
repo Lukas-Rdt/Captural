@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-    base: "./Captural/",
+    base: "/Captural/",
     build: {
         outDir: "dist"
     }
