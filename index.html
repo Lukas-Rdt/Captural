@@ -1,13 +1,617 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Captural</title>
-  </head>
-  <body>
-    <h1>App</h1>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Natural Captcha - Results</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    <script type="module" src="/main.js"></script>
-  </body>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a0a0b 0%, #131316 50%, #0a0a0b 100%);
+      font-family: 'DM Sans', sans-serif;
+      padding: 40px 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background orbs */
+    .orb-1 {
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .orb-2 {
+      position: absolute;
+      bottom: -20%;
+      left: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+      opacity: 0;
+      transform: translateY(-20px);
+      animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 12px;
+      padding: 14px 28px;
+      margin-bottom: 28px;
+      border: 2px solid;
+    }
+
+    .status-badge.passed {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: #10B981;
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+    }
+
+    .status-badge.failed {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: #EF4444;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.25);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .status-badge.passed .status-dot {
+      background: #10B981;
+      box-shadow: 0 0 16px #10B981;
+    }
+
+    .status-badge.failed .status-dot {
+      background: #EF4444;
+      box-shadow: 0 0 16px #EF4444;
+    }
+
+    .status-text {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+    }
+
+    .status-badge.passed .status-text {
+      color: #10B981;
+    }
+
+    .status-badge.failed .status-text {
+      color: #EF4444;
+    }
+
+    .title {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.5);
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    /* Circular Progress */
+    .circles-container {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+
+    .circle-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .circle-item:nth-child(1) { animation-delay: 0.3s; }
+    .circle-item:nth-child(2) { animation-delay: 0.5s; }
+    .circle-item:nth-child(3) { animation-delay: 0.7s; }
+
+    .circle-svg {
+      transform: rotate(-90deg);
+    }
+
+    .circle-wrapper {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .circle-text-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .circle-value {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .circle-unit {
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .circle-bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.08);
+      stroke-width: 8;
+    }
+
+    .circle-progress {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .circle-progress.purple { stroke: #6366F1; filter: drop-shadow(0 0 8px rgba(99,102,241,0.4)); }
+    .circle-progress.violet { stroke: #8B5CF6; filter: drop-shadow(0 0 8px rgba(139,92,246,0.4)); }
+    .circle-progress.green { stroke: #10B981; filter: drop-shadow(0 0 8px rgba(16,185,129,0.4)); }
+
+    .circle-label {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 500px) {
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .metric-card {
+      background: rgba(255,255,255,0.03);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .metric-card:nth-child(1) { animation-delay: 0.9s; }
+    .metric-card:nth-child(2) { animation-delay: 1s; }
+
+    .metric-label {
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .metric-value {
+      font-size: 36px;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .metric-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 8px;
+    }
+
+    /* Phase Details */
+    .phase-section {
+      background: rgba(255,255,255,0.02);
+      border-radius: 20px;
+      padding: 28px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .phase-title {
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .phase-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .phase-bar {
+      opacity: 0;
+      transform: translateX(-20px);
+      animation: fadeInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .phase-bar:nth-child(1) { animation-delay: 1.2s; }
+    .phase-bar:nth-child(2) { animation-delay: 1.4s; }
+
+    .phase-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .phase-name {
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .phase-stats {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .phase-errors {
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+    }
+
+    .phase-time {
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 600;
+      min-width: 50px;
+      text-align: right;
+    }
+
+    .phase-bar-track {
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .phase-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      width: 0;
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    }
+
+    .phase-bar-fill.fast { background: linear-gradient(90deg, #10B981, #34D399); }
+    .phase-bar-fill.medium { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+    .phase-bar-fill.slow { background: linear-gradient(90deg, #EF4444, #F87171); }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      opacity: 0;
+      animation: fadeIn 1s ease-out 1.5s forwards;
+    }
+
+    .footer p {
+      color: rgba(255,255,255,0.4);
+      font-size: 13px;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInDown {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInLeft {
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb-1"></div>
+  <div class="orb-2"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="status-badge passed" id="statusBadge">
+        <div class="status-dot"></div>
+        <span class="status-text" id="statusText">VERIFIED</span>
+      </div>
+      <h1 class="title">Captcha Result</h1>
+      <p class="subtitle">Your Performance</p>
+    </div>
+
+    <!-- Circular Progress -->
+    <div class="circles-container">
+      <div class="circle-item">
+        <div class="circle-wrapper">
+          <svg width="140" height="140" viewBox="0 0 140 140" class="circle-svg">
+            <circle cx="70" cy="70" r="54" class="circle-bg"/>
+            <circle cx="70" cy="70" r="54" class="circle-progress purple" id="puzzleCircle"
+              stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+          </svg>
+          <div class="circle-text-overlay">
+            <span class="circle-value" id="puzzleValue">0.0</span>
+            <span class="circle-unit">sec</span>
+          </div>
+        </div>
+        <span class="circle-label">Puzzle</span>
+      </div>
+
+      <div class="circle-item">
+        <div class="circle-wrapper">
+          <svg width="140" height="140" viewBox="0 0 140 140" class="circle-svg">
+            <circle cx="70" cy="70" r="54" class="circle-bg"/>
+            <circle cx="70" cy="70" r="54" class="circle-progress violet" id="objectCircle"
+              stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+          </svg>
+          <div class="circle-text-overlay">
+            <span class="circle-value" id="objectValue">0.0</span>
+            <span class="circle-unit">sec</span>
+          </div>
+        </div>
+        <span class="circle-label">Object Alignment</span>
+      </div>
+
+      <div class="circle-item">
+        <div class="circle-wrapper">
+          <svg width="140" height="140" viewBox="0 0 140 140" class="circle-svg">
+            <circle cx="70" cy="70" r="54" class="circle-bg"/>
+            <circle cx="70" cy="70" r="54" class="circle-progress green" id="totalCircle"
+              stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+          </svg>
+          <div class="circle-text-overlay">
+            <span class="circle-value" id="totalValue">0.0</span>
+            <span class="circle-unit">sec</span>
+          </div>
+        </div>
+        <span class="circle-label">Total</span>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Accuracy</div>
+        <div class="metric-value" id="accuracyValue">0%</div>
+        <div class="metric-sub">Average of both phases</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Errors</div>
+        <div class="metric-value" id="errorsValue">0</div>
+        <div class="metric-sub" id="errorsSub">0 puzzle · 0 alignment</div>
+      </div>
+    </div>
+
+    <!-- Phase Details -->
+    <div class="phase-section">
+      <h3 class="phase-title">Phase Details</h3>
+      <div class="phase-bars">
+        <div class="phase-bar">
+          <div class="phase-bar-header">
+            <span class="phase-name">Image Puzzle</span>
+            <div class="phase-stats">
+              <span class="phase-errors" id="puzzleErrors">0 errors</span>
+              <span class="phase-time" id="puzzleTime">0.0s</span>
+            </div>
+          </div>
+          <div class="phase-bar-track">
+            <div class="phase-bar-fill" id="puzzleBar"></div>
+          </div>
+        </div>
+
+        <div class="phase-bar">
+          <div class="phase-bar-header">
+            <span class="phase-name">Object Alignment</span>
+            <div class="phase-stats">
+              <span class="phase-errors" id="objectErrors">0 errors</span>
+              <span class="phase-time" id="objectTime">0.0s</span>
+            </div>
+          </div>
+          <div class="phase-bar-track">
+            <div class="phase-bar-fill" id="objectBar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Natural Captcha · NUI Project 2026</p>
+    </div>
+  </div>
+
+  <script>
+    // ======================================================
+    // PERFORMANCE DATA Placeholder - Replace with real data
+    // ======================================================
+    const performanceData = {
+      puzzleTime: 8.4,        // Time for puzzle (seconds)
+      objectTime: 5.2,        // Time for object alignment (seconds)
+      totalTime: 13.6,        // Total time (seconds)
+      puzzleErrors: 2,        // Errors in puzzle task
+      objectErrors: 1,        // Errors in object alignment
+      puzzleAccuracy: 87,     // Accuracy percentage for puzzle
+      objectAccuracy: 94,     // Accuracy percentage for object
+      passed: true            // Captcha passed aka user verified?
+    };
+
+    // ============================================
+    // Or call this function from outside to update the dashboard with new data:
+    //
+    // updateDashboard({
+    //   puzzleTime: 10.2,
+    //   objectTime: 6.5,
+    //   ...
+    // });
+
+    function updateDashboard(data) {
+      const circumference = 2 * Math.PI * 54; // 339.292
+
+      // Update status badge
+      const badge = document.getElementById('statusBadge');
+      const statusText = document.getElementById('statusText');
+      if (data.passed) {
+        badge.className = 'status-badge passed';
+        statusText.textContent = 'VERIFIED';
+      } else {
+        badge.className = 'status-badge failed';
+        statusText.textContent = 'FAILED';
+      }
+
+      // Animate circular progress
+      setTimeout(() => {
+        animateCircle('puzzleCircle', 'puzzleValue', data.puzzleTime, 15, circumference);
+      }, 300);
+
+      setTimeout(() => {
+        animateCircle('objectCircle', 'objectValue', data.objectTime, 15, circumference);
+      }, 500);
+
+      setTimeout(() => {
+        animateCircle('totalCircle', 'totalValue', data.totalTime, 30, circumference);
+      }, 700);
+
+      // Update metrics
+      setTimeout(() => {
+        const avgAccuracy = Math.round((data.puzzleAccuracy + data.objectAccuracy) / 2);
+        document.getElementById('accuracyValue').textContent = avgAccuracy + '%';
+        
+        const totalErrors = data.puzzleErrors + data.objectErrors;
+        document.getElementById('errorsValue').textContent = totalErrors;
+        document.getElementById('errorsSub').textContent = 
+          `${data.puzzleErrors} puzzle · ${data.objectErrors} alignment`;
+      }, 900);
+
+      // Update phase bars
+      setTimeout(() => {
+        updatePhaseBar('puzzleBar', 'puzzleTime', 'puzzleErrors', 
+          data.puzzleTime, 15, data.puzzleErrors);
+      }, 1200);
+
+      setTimeout(() => {
+        updatePhaseBar('objectBar', 'objectTime', 'objectErrors', 
+          data.objectTime, 15, data.objectErrors);
+      }, 1400);
+    }
+
+    function animateCircle(circleId, valueId, value, max, circumference) {
+      const circle = document.getElementById(circleId);
+      const valueEl = document.getElementById(valueId);
+      const percentage = Math.min((value / max) * 100, 100);
+      const offset = circumference - (percentage / 100) * circumference;
+      
+      circle.style.strokeDashoffset = offset;
+
+      // Animate the number
+      let current = 0;
+      const duration = 1500;
+      const startTime = Date.now();
+      
+      function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        current = value * eased;
+        valueEl.textContent = current.toFixed(1);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      }
+      animate();
+    }
+
+    function updatePhaseBar(barId, timeId, errorsId, time, maxTime, errors) {
+      const bar = document.getElementById(barId);
+      const percentage = (time / maxTime) * 100;
+      
+      // Set color based on percentage
+      if (percentage < 40) {
+        bar.className = 'phase-bar-fill fast';
+      } else if (percentage < 70) {
+        bar.className = 'phase-bar-fill medium';
+      } else {
+        bar.className = 'phase-bar-fill slow';
+      }
+      
+      bar.style.width = percentage + '%';
+      document.getElementById(timeId).textContent = time.toFixed(1) + 's';
+      document.getElementById(errorsId).textContent = 
+        errors + (errors === 1 ? ' error' : ' errors');
+    }
+
+    // Initialize with data when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDashboard(performanceData);
+    });
+  </script>
+</body>
 </html>
+
