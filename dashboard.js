@@ -29,25 +29,25 @@ export function updateDashboard(data) {
   try {
     const nat = computeNaturalness(data || {});
     const natPercent = nat.percent;
+    const natEl = document.getElementById("naturalnessValue");
 
-    const subtitleEl = document.querySelector('.subtitle');
-    if (subtitleEl) {
-      let natEl = document.getElementById('naturalnessValue');
-      if (!natEl) {
-        natEl = document.createElement('div');
-        natEl.id = 'naturalnessValue';
-        natEl.className = 'naturalness-value';
-        subtitleEl.insertAdjacentElement('afterend', natEl);
-      }
+    if (natEl) {
       natEl.textContent = `${natPercent}% Natural`;
       // apply semantic class for styling/animation
-      natEl.classList.remove('naturalness-high', 'naturalness-med', 'naturalness-low');
-      if (natPercent >= 60) natEl.classList.add('naturalness-high');
-      else if (natPercent >= 30) natEl.classList.add('naturalness-med');
-      else natEl.classList.add('naturalness-low');
+      natEl.classList.remove(
+        "naturalness-high",
+        "naturalness-med",
+        "naturalness-low"
+      );
+      void natEl.offsetWidth;
+      natEl.classList.add("visible");
+
+      if (natPercent >= 60) natEl.classList.add("naturalness-high");
+      else if (natPercent >= 30) natEl.classList.add("naturalness-med");
+      else natEl.classList.add("naturalness-low");
     }
   } catch (e) {
-    // ignore
+    console.error("Error updating naturalness:", e);
   }
 
   // Animate circular progress
@@ -57,7 +57,7 @@ export function updateDashboard(data) {
       "puzzleValue",
       data.puzzleTime,
       15,
-      circumference,
+      circumference
     );
   }, 300);
 
@@ -67,7 +67,7 @@ export function updateDashboard(data) {
       "objectValue",
       data.objectTime,
       15,
-      circumference,
+      circumference
     );
   }, 500);
 
@@ -77,7 +77,7 @@ export function updateDashboard(data) {
       "totalValue",
       data.totalTime,
       30,
-      circumference,
+      circumference
     );
   }, 700);
 
@@ -88,7 +88,8 @@ export function updateDashboard(data) {
     const avgAccuracy = Math.round((pAcc + oAcc) / 2);
     document.getElementById("accuracyValue").textContent = avgAccuracy + "%";
 
-    const totalErrors = (Number(data.puzzleErrors) || 0) + (Number(data.objectErrors) || 0);
+    const totalErrors =
+      (Number(data.puzzleErrors) || 0) + (Number(data.objectErrors) || 0);
     document.getElementById("errorsValue").textContent = totalErrors;
     document.getElementById("errorsSub").textContent =
       `${Number(data.puzzleErrors) || 0} puzzle · ${Number(data.objectErrors) || 0} alignment`;
@@ -102,7 +103,7 @@ export function updateDashboard(data) {
       "puzzleErrors",
       data.puzzleTime,
       15,
-      data.puzzleErrors,
+      data.puzzleErrors
     );
   }, 1200);
 
@@ -113,7 +114,7 @@ export function updateDashboard(data) {
       "objectErrors",
       data.objectTime,
       15,
-      data.objectErrors,
+      data.objectErrors
     );
   }, 1400);
 }
