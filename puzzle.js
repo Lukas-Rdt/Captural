@@ -6,7 +6,7 @@ import {
 
 // --- KONFIGURATION ---
 const IMAGE_BASE_PATH = "./images/";
-const IMAGES = [
+const IMAGE_FILES = [
   "apple.webp",
   "dice_art.webp",
   "dice_collection_crop.webp",
