@@ -5,7 +5,16 @@ import {
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
 // --- KONFIGURATION ---
-const IMAGE_SRC = "./images/apple.jpg";
+const IMAGE_BASE_PATH = "./images/";
+const IMAGES = [
+  "apple.webp",
+  "dice_art.webp",
+  "dice_collection_crop.webp",
+  "finger.webp",
+  "fingerReversed.webp"
+  ]
+
+
 const ROWS = 3;
 const COLS = 3;
 const SNAP_DIST_THRESHOLD = 0.1; // 0-1 snap 
@@ -159,16 +168,22 @@ export class PuzzleModule {
 
   async loadPuzzleImage() {
     return new Promise((resolve) => {
+      // ZUFALLSWAHL: Ein zufälliges Bild aus der Liste picken
+      const randomIndex = Math.floor(Math.random() * IMAGE_FILES.length);
+      const randomImageSrc = IMAGE_BASE_PATH + IMAGE_FILES[randomIndex];
+
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = IMAGE_SRC;
+      img.src = randomImageSrc;
+      
       img.onload = () => {
         this.sourceImage = img;
+        console.log("Geladenes Puzzle:", randomImageSrc);
         resolve();
       };
       img.onerror = () => {
-        console.error("Bild konnte nicht geladen werden:", IMAGE_SRC);
-        resolve(); // Trotzdem resolven, um App nicht zu crashen
+        console.error("Bild konnte nicht geladen werden:", randomImageSrc);
+        resolve(); 
       }
     });
   }
