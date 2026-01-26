@@ -11,8 +11,8 @@ const IMAGE_FILES = [
   "dice_art.webp",
   "dice_collection_crop.webp",
   "finger.webp",
-  "fingerReversed.webp"
-  ]
+  "fingerReversed.webp",
+  ];
 
 
 const ROWS = 3;
