@@ -12,12 +12,11 @@ const IMAGE_FILES = [
   "dice_collection_crop.webp",
   "finger.webp",
   "fingerReversed.webp",
-  ];
-
+];
 
 const ROWS = 3;
 const COLS = 3;
-const SNAP_DIST_THRESHOLD = 0.1; // 0-1 snap 
+const SNAP_DIST_THRESHOLD = 0.1; // 0-1 snap
 const SNAP_ROT_THRESHOLD = 0.5; // Radiant für rotation (~17 Grad)
 const PINCH_THRESHOLD = 0.08; // Abstand Daumen-Zeigefinger zum Greifen
 
@@ -28,28 +27,33 @@ class PuzzlePiece {
     this.targetRow = row;
     this.targetCol = col;
     this.img = img;
-    
-    this.snappedRow = -1; 
+
+    this.snappedRow = -1;
     this.snappedCol = -1;
 
-    this.sizePercent = 0.6 / Math.max(ROWS, COLS); 
-    
+    this.sizePercent = 0.6 / Math.max(ROWS, COLS);
+
     this.x = 0.1 + Math.random() * 0.8;
     this.y = 0.1 + Math.random() * 0.8;
-    this.rotation = (Math.random() * Math.PI * 2);
-    
+    this.rotation = Math.random() * Math.PI * 2;
+
     this.isLocked = false;
-    this.grabbedByHandId = null; 
+    this.grabbedByHandId = null;
     this.grabOffset = { x: 0, y: 0, angle: 0 };
   }
 
   isCorrect() {
     if (!this.isLocked) return false;
-    if (this.snappedRow !== this.targetRow || this.snappedCol !== this.targetCol) return false;
+    if (
+      this.snappedRow !== this.targetRow ||
+      this.snappedCol !== this.targetCol
+    )
+      return false;
 
     let rot = this.rotation % (Math.PI * 2);
     if (rot < 0) rot += Math.PI * 2;
-    const isUpright = (Math.abs(rot) < 0.01 || Math.abs(rot - Math.PI * 2) < 0.01);
+    const isUpright =
+      Math.abs(rot) < 0.01 || Math.abs(rot - Math.PI * 2) < 0.01;
     return isUpright;
   }
 
@@ -58,11 +62,11 @@ class PuzzlePiece {
     const pieceSizePx = puzzleSize / ROWS;
     const startX = (cw - puzzleSize) / 2;
     const startY = (ch - puzzleSize) / 2;
-    
+
     return {
       x: startX + c * pieceSizePx + pieceSizePx / 2,
       y: startY + r * pieceSizePx + pieceSizePx / 2,
-      size: pieceSizePx
+      size: pieceSizePx,
     };
   }
 
@@ -74,16 +78,16 @@ class PuzzlePiece {
     let renderX, renderY, renderSize;
 
     if (this.isLocked && this.snappedRow !== -1) {
-        const slot = this.getSlotPos(cw, ch, this.snappedRow, this.snappedCol);
-        renderX = slot.x;
-        renderY = slot.y;
-        renderSize = slot.size;
+      const slot = this.getSlotPos(cw, ch, this.snappedRow, this.snappedCol);
+      renderX = slot.x;
+      renderY = slot.y;
+      renderSize = slot.size;
     } else {
-        renderX = this.x * cw;
-        renderY = this.y * ch;
-        renderSize = this.getTargetPos(cw, ch).size;
+      renderX = this.x * cw;
+      renderY = this.y * ch;
+      renderSize = this.getTargetPos(cw, ch).size;
     }
-    
+
     const r = this.rotation;
     const correct = this.isCorrect();
 
@@ -104,24 +108,30 @@ class PuzzlePiece {
     }
 
     ctx.beginPath();
-    ctx.rect(-renderSize/2, -renderSize/2, renderSize, renderSize);
-    
+    ctx.rect(-renderSize / 2, -renderSize / 2, renderSize, renderSize);
+
     if (correct) {
-       ctx.stroke();
-       ctx.filter = "brightness(70%)"; 
+      ctx.stroke();
+      ctx.filter = "brightness(70%)";
     } else if (this.isLocked) {
-       ctx.filter = "brightness(80%) grayscale(60%)"; 
+      ctx.filter = "brightness(80%) grayscale(60%)";
     }
-    
-    ctx.clip(); 
+
+    ctx.clip();
 
     const srcPieceW = this.img.width / COLS;
     const srcPieceH = this.img.height / ROWS;
-    
+
     ctx.drawImage(
       this.img,
-      this.targetCol * srcPieceW, this.targetRow * srcPieceH, srcPieceW, srcPieceH,
-      -renderSize/2, -renderSize/2, renderSize, renderSize
+      this.targetCol * srcPieceW,
+      this.targetRow * srcPieceH,
+      srcPieceW,
+      srcPieceH,
+      -renderSize / 2,
+      -renderSize / 2,
+      renderSize,
+      renderSize
     );
 
     ctx.restore();
@@ -134,7 +144,7 @@ export class PuzzleModule {
     this.handLandmarker = null;
     this.puzzlePieces = [];
     this.sourceImage = null;
-    
+
     this.canvasElement = canvasElement;
     this.ctx = this.canvasElement.getContext("2d");
     this.drawUtils = new DrawingUtils(this.ctx);
@@ -147,7 +157,6 @@ export class PuzzleModule {
    * Wird vom AppManager einmalig aufgerufen.
    */
   async init() {
-    
     // 1. MediaPipe laden
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
@@ -164,7 +173,7 @@ export class PuzzleModule {
 
     await this.loadPuzzleImage();
     this.generatePuzzlePieces();
-    }
+  }
 
   async loadPuzzleImage() {
     return new Promise((resolve) => {
@@ -175,7 +184,7 @@ export class PuzzleModule {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.src = randomImageSrc;
-      
+
       img.onload = () => {
         this.sourceImage = img;
         console.log("Geladenes Puzzle:", randomImageSrc);
@@ -183,8 +192,8 @@ export class PuzzleModule {
       };
       img.onerror = () => {
         console.error("Bild konnte nicht geladen werden:", randomImageSrc);
-        resolve(); 
-      }
+        resolve();
+      };
     });
   }
 
@@ -193,7 +202,9 @@ export class PuzzleModule {
     let idCounter = 0;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        this.puzzlePieces.push(new PuzzlePiece(idCounter++, r, c, this.sourceImage));
+        this.puzzlePieces.push(
+          new PuzzlePiece(idCounter++, r, c, this.sourceImage)
+        );
       }
     }
   }
@@ -207,7 +218,10 @@ export class PuzzleModule {
     if (!this.handLandmarker) return false;
 
     // 1. Canvas Größe anpassen falls nötig
-    if (this.canvasElement.width !== video.videoWidth || this.canvasElement.height !== video.videoHeight) {
+    if (
+      this.canvasElement.width !== video.videoWidth ||
+      this.canvasElement.height !== video.videoHeight
+    ) {
       this.canvasElement.width = video.videoWidth;
       this.canvasElement.height = video.videoHeight;
     }
@@ -244,29 +258,31 @@ export class PuzzleModule {
     }
 
     // 6. Prüfen ob gewonnen
-    const allCorrect = this.puzzlePieces.every(piece => piece.isCorrect());
+    const allCorrect = this.puzzlePieces.every((piece) => piece.isCorrect());
     return allCorrect;
   }
 
   // --- LOGIC HELPER ---
   updateGameLogic(landmarksArray, cw, ch) {
-    if(landmarksArray.length === 0) return;
+    if (landmarksArray.length === 0) return;
     for (let handIdx = 0; handIdx < landmarksArray.length; handIdx++) {
       const landmarks = landmarksArray[handIdx];
-      
+
       const wrist = landmarks[0];
       const thumb = landmarks[4];
       const index = landmarks[8];
-  
+
       const dist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
       const midX = (thumb.x + index.x) / 2;
       const midY = (thumb.y + index.y) / 2;
       const angle = Math.atan2(midY - wrist.y, midX - wrist.x);
-  
+
       const isPinching = dist < PINCH_THRESHOLD;
-  
-      let heldPiece = this.puzzlePieces.find(p => p.grabbedByHandId === handIdx);
-  
+
+      let heldPiece = this.puzzlePieces.find(
+        (p) => p.grabbedByHandId === handIdx
+      );
+
       if (isPinching) {
         if (heldPiece) {
           // Bewegen
@@ -274,38 +290,39 @@ export class PuzzleModule {
           heldPiece.x += (midX - heldPiece.grabOffset.x - heldPiece.x) * 0.5;
           heldPiece.y += (midY - heldPiece.grabOffset.y - heldPiece.y) * 0.5;
           heldPiece.rotation = newRot;
-          
+
           // Limits
           heldPiece.x = Math.max(0, Math.min(1, heldPiece.x));
           heldPiece.y = Math.max(0, Math.min(1, heldPiece.y));
-  
         } else {
           // Versuchen zu greifen
-          const candidates = this.puzzlePieces.filter(p => 
-              p.grabbedByHandId === null && 
-              !p.isCorrect()
+          const candidates = this.puzzlePieces.filter(
+            (p) => p.grabbedByHandId === null && !p.isCorrect()
           );
-          
+
           let closest = null;
           let minD = Infinity;
-  
-          candidates.forEach(p => {
-              const d = Math.hypot((p.x - midX), (p.y - midY) * (ch/cw)); 
-              if (d < 0.1) { 
-                 if (d < minD) { minD = d; closest = p; }
+
+          candidates.forEach((p) => {
+            const d = Math.hypot(p.x - midX, (p.y - midY) * (ch / cw));
+            if (d < 0.1) {
+              if (d < minD) {
+                minD = d;
+                closest = p;
               }
+            }
           });
-  
+
           if (closest) {
             closest.grabbedByHandId = handIdx;
             closest.isLocked = false;
             closest.snappedRow = -1;
             closest.snappedCol = -1;
-            
+
             closest.grabOffset = {
-              x: 0, 
+              x: 0,
               y: 0,
-              angle: angle - closest.rotation 
+              angle: angle - closest.rotation,
             };
           }
         }
@@ -321,51 +338,50 @@ export class PuzzleModule {
 
   checkSnap(p, cw, ch) {
     const PI_HALF = Math.PI / 2;
-    
+
     let currentRot = p.rotation % (Math.PI * 2);
     if (currentRot < 0) currentRot += Math.PI * 2;
-  
+
     const step = Math.round(currentRot / PI_HALF);
-    const targetRot = step * PI_HALF; 
+    const targetRot = step * PI_HALF;
     const rotDiff = Math.abs(currentRot - targetRot);
-  
+
     if (rotDiff > SNAP_ROT_THRESHOLD) return;
-  
+
     // Bester Slot finden
     let bestCandidate = null;
     let minDistance = Infinity;
-  
+
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        
         const slotPos = p.getSlotPos(cw, ch, r, c);
         const slotXNorm = slotPos.x / cw;
         const slotYNorm = slotPos.y / ch;
-  
-        const dist = Math.hypot(
-            p.x - slotXNorm, 
-            (p.y - slotYNorm) * (ch / cw)
-        );
-  
+
+        const dist = Math.hypot(p.x - slotXNorm, (p.y - slotYNorm) * (ch / cw));
+
         if (dist < SNAP_DIST_THRESHOLD && dist < minDistance) {
           minDistance = dist;
           bestCandidate = { r, c, x: slotXNorm, y: slotYNorm };
         }
       }
     }
-  
+
     // Snappen ausführen
     if (bestCandidate) {
       const { r, c, x, y } = bestCandidate;
-  
-      const occupied = this.puzzlePieces.find(other => 
-        other.isLocked && other.id !== p.id && 
-        other.snappedRow === r && other.snappedCol === c 
+
+      const occupied = this.puzzlePieces.find(
+        (other) =>
+          other.isLocked &&
+          other.id !== p.id &&
+          other.snappedRow === r &&
+          other.snappedCol === c
       );
-  
+
       if (occupied) {
         if (occupied.isCorrect()) {
-           return; 
+          return;
         }
         // Verdrängen
         occupied.isLocked = false;
@@ -373,21 +389,21 @@ export class PuzzleModule {
         occupied.snappedCol = -1;
         occupied.x += (Math.random() - 0.5) * 0.2;
         occupied.y += (Math.random() - 0.5) * 0.2;
-        occupied.rotation += (Math.random() - 0.5);
+        occupied.rotation += Math.random() - 0.5;
       }
-  
+
       // Lock on
       p.isLocked = true;
       p.grabbedByHandId = null;
-      p.rotation = targetRot; 
-      p.x = x; 
+      p.rotation = targetRot;
+      p.x = x;
       p.y = y;
       p.snappedRow = r;
       p.snappedCol = c;
 
       if (!p.isCorrect()) {
-          this.puzzleErrors++;
-          console.log("Fehlerhafter Move! Total Errors:", this.puzzleErrors);
+        this.puzzleErrors++;
+        console.log("Fehlerhafter Move! Total Errors:", this.puzzleErrors);
       }
     }
   }
@@ -396,11 +412,11 @@ export class PuzzleModule {
     const puzzleSize = Math.min(cw, ch) * 0.6;
     const startX = (cw - puzzleSize) / 2;
     const startY = (ch - puzzleSize) / 2;
-  
+
     this.ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(startX, startY, puzzleSize, puzzleSize);
-  
+
     // Gitterlinien
     this.ctx.beginPath();
     const step = puzzleSize / ROWS;
@@ -412,7 +428,7 @@ export class PuzzleModule {
     }
     this.ctx.stroke();
   }
-  
+
   drawHands(landmarks) {
     for (const hand of landmarks) {
       this.drawUtils.drawConnectors(hand, HandLandmarker.HAND_CONNECTIONS, {
