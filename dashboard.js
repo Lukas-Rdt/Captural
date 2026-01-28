@@ -50,6 +50,29 @@ export function updateDashboard(data) {
     console.error("Error updating naturalness:", e);
   }
 
+  // Save entry to leaderboard (recent first)
+  try {
+    const key = "captural_leaderboard";
+    const board = JSON.parse(localStorage.getItem(key) || "[]");
+    const entry = {
+      ...data,
+      timestamp: Date.now(),
+      totalTime:
+        (Number(data.puzzleTime) || 0) +
+        (Number(data.objectTime) || 0),
+      totalErrors:
+        (Number(data.puzzleErrors) || 0) +
+        (Number(data.objectErrors) || 0),
+    };
+    board.unshift(entry);
+    // keep recent 50
+    if (board.length > 50) board.length = 50;
+    localStorage.setItem(key, JSON.stringify(board));
+    renderLeaderboard();
+  } catch (e) {
+    console.error("Error saving leaderboard:", e);
+  }
+
   // Animate circular progress
   setTimeout(() => {
     animateCircle(
@@ -117,6 +140,53 @@ export function updateDashboard(data) {
       data.objectErrors
     );
   }, 1400);
+}
+
+// Render leaderboard from localStorage
+function renderLeaderboard() {
+  const key = "captural_leaderboard";
+  const tbody = document.querySelector("#leaderboardTable tbody");
+  if (!tbody) return;
+  let board = [];
+  try {
+    board = JSON.parse(localStorage.getItem(key) || "[]");
+    board.sort((a, b) => {
+      if (a.totalTime !== b.totalTime) return a.totalTime - b.totalTime;
+      if (a.totalErrors !== b.totalErrors)
+        return a.totalErrors - b.totalErrors;
+      return b.naturalness - a.naturalness;
+    });
+  } catch (e) {
+    board = [];
+  }
+  // clear
+  tbody.innerHTML = "";
+
+  board.forEach((row, i) => {
+    const tr = document.createElement("tr");
+
+    const puzzle = row.puzzleName || (row.puzzleImage || "puzzle");
+    const time = ((Number(row.puzzleTime) || 0) + (Number(row.objectTime) || 0)).toFixed(1) + "s";
+    const errors = Number(row.puzzleErrors) || 0;
+
+    const nat = computeNaturalness(row || {}).percent;
+
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${escapeHtml(puzzle)}</td>
+      <td>${time}</td>
+      <td>${errors}</td>
+      <td><span class="leader-nat ${nat >= 60 ? 'naturalness-high' : nat >=30 ? 'naturalness-med' : 'naturalness-low'}">${nat}%</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(s) {
+  if (!s) return "";
+  return s.replace(/[&<>'"]/g, function (c) {
+    return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c];
+  });
 }
 
 function animateCircle(circleId, valueId, value, max, circumference) {

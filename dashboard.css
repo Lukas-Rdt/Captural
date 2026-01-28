@@ -13,6 +13,14 @@ body {
   overflow-x: hidden;
 }
 
+.orb-container {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
 /* Background orbs */
 .orb-1 {
   position: absolute;
@@ -30,7 +38,7 @@ body {
 
 .orb-2 {
   position: absolute;
-  bottom: -20%;
+  bottom: -10%;
   left: -10%;
   width: 500px;
   height: 500px;
@@ -283,6 +291,49 @@ body {
   border-radius: 20px;
   padding: 28px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Leaderboard styles */
+.leaderboard {
+  margin-top: 28px;
+}
+.leaderboard-wrapper {
+  overflow-x: hidden;
+}
+#leaderboardTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+#leaderboardTable thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+#leaderboardTable tbody td {
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.leader-nat {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.leader-nat.naturalness-high { background: rgba(46,204,113,0.12); color: #2ecc71; }
+.leader-nat.naturalness-med { background: rgba(241,196,15,0.10); color: #f1c40f; }
+.leader-nat.naturalness-low { background: rgba(231,76,60,0.10); color: #e74c3c; }
+
+/* Disable the larger dashboard animation on leaderboard badges */
+.leader-nat.naturalness-high,
+.leader-nat.naturalness-med,
+.leader-nat.naturalness-low {
+  animation: none !important;
+  text-shadow: none !important;
 }
 
 .phase-title {

@@ -185,7 +185,7 @@ class AppManager {
       // UI Switch
       this.modal.classList.add("hidden");
       this.dashboardView.classList.remove("hidden");
-      document.body.style.overflow = "auto";
+      //document.body.style.overflow = "auto"; macht dashboard x-scrollable
 
       // Render Dashboard
       updateDashboard(this.sessionData);
@@ -206,6 +206,14 @@ class AppManager {
         console.log(
           `Puzzle Done! Time: ${duration}s, Errors: ${this.sessionData.puzzleErrors}`
         );
+
+        // record puzzle name if available
+        try {
+          const src = this.puzzleModule.sourceImage && this.puzzleModule.sourceImage.src;
+          this.sessionData.puzzleName = src ? src.split("/").pop() : "puzzle";
+        } catch (e) {
+          this.sessionData.puzzleName = "puzzle";
+        }
 
         this.setState(3); // change to phase 2
         return;

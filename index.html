@@ -111,9 +111,10 @@
 
     <!-- Dashboard -->
     <div id="dashboard-view" class="view-container hidden">
-      <div class="orb-1"></div>
-      <div class="orb-2"></div>
-
+      <div class="orb-container">
+        <div class="orb-1"></div>
+        <div class="orb-2"></div>
+      </div>
       <div class="container">
         <div class="header">
           <div class="status-badge passed" id="statusBadge">
@@ -244,6 +245,25 @@
                 <div class="phase-bar-fill" id="objectBar"></div>
               </div>
             </div>
+          </div>
+        </div>
+        
+        <!-- Leaderboard -->
+        <div id="leaderboard" class="phase-section leaderboard">
+          <h3 class="phase-title">Leaderboard</h3>
+          <div class="leaderboard-wrapper">
+            <table id="leaderboardTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Rompecabezas</th>
+                  <th>Tiempo</th>
+                  <th>Errores</th>
+                  <th>Natural</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
         <div class="footer">
