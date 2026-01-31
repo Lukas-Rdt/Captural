@@ -27,6 +27,10 @@ class AppManager {
     this.puzzleModule = new PuzzleModule(this.canvas);
     this.objectModule = new ObjectAlignModule(this.canvas);
 
+    // puzzle kram mehr
+    this.refContainer = document.getElementById("reference-container");
+    this.refImage = document.getElementById("puzzle-target-image");
+
     // State
     this.state = 0; // 0=Login, 1=Puzzle, 2=Object, 3=Dashboard
     this.isRunning = false;
@@ -93,7 +97,7 @@ class AppManager {
     if (value.length === 0) {
       input.classList.remove("valid", "invalid");
       hint.classList.remove("valid", "invalid");
-      hint.textContent = showInitialHint ? "Mínimo 6 caracteres" : "";
+      hint.textContent = showInitialHint ? "Minimum 6 characters" : "";
     } else if (isValid) {
       input.classList.remove("invalid");
       input.classList.add("valid");
@@ -105,7 +109,7 @@ class AppManager {
       input.classList.add("invalid");
       hint.classList.remove("valid");
       hint.classList.add("invalid");
-      hint.textContent = `${MIN_LENGTH - value.length} más caracteres necesarios`;
+      hint.textContent = `${MIN_LENGTH - value.length} more characters needed`;
     }
 
     this.checkFormValid();
@@ -133,6 +137,8 @@ class AppManager {
       this.modal.classList.remove("hidden");
       this.spinner.classList.remove("hidden");
 
+      if(this.refContainer) this.refContainer.classList.add("hidden")
+
       // Start Camera if not running
       if (!this.video.srcObject) {
         try {
@@ -140,18 +146,24 @@ class AppManager {
             video: true,
           });
           this.video.srcObject = stream;
-          await new Promise((r) => (this.video.onloadeddata = r));
+          await new Promise((r) => (this.video.onloadedmetadata = r));
+          this.video.play(); //
         } catch (e) {
           this.instrEl.innerText = "Error: Camera access denied.";
           return;
         }
       }
 
-      this.titleEl.innerText = "Paso 1/2: Rompecabezas";
+      this.titleEl.innerText = "Step 1/2: Puzzle Solving";
       this.instrEl.innerText =
-        "Pellizca las piezas para resolver el rompecabezas.";
+        "Pinch the puzzle pieces to solve the puzzle.";
 
       await this.puzzleModule.init();
+
+      if (this.puzzleModule.sourceImage && this.refImage) {
+          this.refImage.src = this.puzzleModule.sourceImage.src;
+          this.refContainer.classList.remove("hidden");
+      }
 
       this.spinner.classList.add("hidden");
       this.startTime = Date.now();
@@ -161,6 +173,9 @@ class AppManager {
       this.titleEl.innerText = "Task 2/2: Align the object with a dice";
       this.instrEl.innerText = "Loading the task - this may take a second...";
       this.spinner.classList.remove("hidden");
+
+      // hide puzzle image
+      if(this.refContainer) this.refContainer.classList.add("hidden");
 
       await this.objectModule.init();
 
