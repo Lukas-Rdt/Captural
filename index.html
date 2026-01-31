@@ -102,6 +102,18 @@
           <video id="webcam" autoplay playsinline style="display: none"></video>
           <canvas id="output_canvas"></canvas>
 
+          <div id="alignment-overlay" class="align-target-overlay" style="width: 180px; display: none; position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; color: white; text-align: center;">
+              
+              <div id="alignment-status" style="margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #ff4d4d;">
+                  Kein Objekt gefunden
+              </div>
+
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                  <img id="alignment-target-img" src="" alt="Target" style="width: 100px;">
+                  <span class="align-target-label" style="color: white; margin-top:4px; font-size: 12px; opacity: 0.6;">Target Position</span>
+              </div>
+          </div>
+
           <div id="loading-spinner" class="spinner"></div>
         </div>
 

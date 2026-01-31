@@ -158,8 +158,8 @@ class AppManager {
       this.isRunning = true;
       this.loop();
     } else if (newState === 2) {
-      this.titleEl.innerText = "Paso 2/2: Alineación de Objeto";
-      this.instrEl.innerText = "Usa tu mano para rotar el objeto.";
+      this.titleEl.innerText = "Task 2/2: Align the object with a dice";
+      this.instrEl.innerText = "Loading the task - this may take a second...";
       this.spinner.classList.remove("hidden");
 
       await this.objectModule.init();
