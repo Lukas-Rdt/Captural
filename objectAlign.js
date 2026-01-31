@@ -115,7 +115,7 @@ export class ObjectAlignModule {
     });
 
     if (this.instrEl) {
-      this.instrEl.innerHTML = `Hold any side of the die steady to calibrate.`;
+      this.instrEl.innerHTML = `Show your dice to the camera to calibrate.`;
     }
     this.isReady = true;
   }
