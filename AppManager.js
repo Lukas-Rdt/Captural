@@ -230,7 +230,7 @@ class AppManager {
           this.sessionData.puzzleName = "puzzle";
         }
 
-        this.setState(3); // change to phase 2
+        this.setState(2); // change to phase 2
         return;
       }
     } else if (this.state === 2) {
