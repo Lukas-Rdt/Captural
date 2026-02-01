@@ -1,6 +1,7 @@
 import { ObjectDetector, FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 import * as THREE from "https://cdn.skypack.dev/three@0.128.0";
 import { GLTFLoader } from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/loaders/GLTFLoader.js";
+
 export class ObjectAlignModule {
 
   constructor() {
@@ -64,7 +65,7 @@ export class ObjectAlignModule {
 
     // randomized goal rotation
     this.goalRoll = (0.5 + Math.random() * 0.8) * (Math.random() < 0.5 ? -1 : 1);
-    this.goalPitch = (25 + Math.random() * 20) * (Math.random() < 0.5 ? -1 : 1);
+    this.goalPitch = (0.3 + Math.random() * 0.4) * (Math.random() < 0.5 ? -1 : 1);
     this.state = "WAITING_FOR_ANCHOR";
     this.calibTimer = 0;
     this.calibThreshold = 30;
@@ -86,6 +87,8 @@ export class ObjectAlignModule {
     this.holdProgress = 0;
     this.lastDiceScore = 0;
     this.lastDiceLabel = "none";
+    this.currentQuaternion = new THREE.Quaternion();
+    this.baseQuaternion = new THREE.Quaternion();
   }
 
   // initialize
@@ -163,8 +166,41 @@ export class ObjectAlignModule {
   }
   smoothValue(c, t, f) { return c + (t - c) * f; }
 
+  // calculate rotation based on dice between fingers
+  computeDiceOrientation(worldLandmarks) {
+      const wrist = worldLandmarks[0];
+      const thumb = worldLandmarks[4];
+      const index = worldLandmarks[8];
+
+      // axis rotation relative to wirst and finger movements (roll, yaw)
+      const diceAxis = new THREE.Vector3(
+          index.x - thumb.x, 
+          index.y - thumb.y, 
+          index.z - thumb.z
+      ).normalize();
+      // pitch
+      const fingerMid = new THREE.Vector3(
+          (thumb.x + index.x) / 2,
+          (thumb.y + index.y) / 2,
+          (thumb.z + index.z) / 2
+      );
+      const handUp = new THREE.Vector3().subVectors(fingerMid, wrist).normalize();
+
+      const xAxis = diceAxis.clone();
+      const zAxis = new THREE.Vector3().crossVectors(xAxis, handUp).normalize();
+      const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+      const matrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      const q = new THREE.Quaternion().setFromRotationMatrix(matrix);
+      
+      // const adjustment = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), -Math.PI/2);
+      // q.multiply(adjustment);
+      
+      return q;
+  }
+
   updateLogic(handRes, objRes, w, h) {
       const landmarks = handRes.landmarks && handRes.landmarks[0];
+      const worldLandmarks = handRes.worldLandmarks && handRes.worldLandmarks[0];
       
       // deetct dice on screen
       let rawDetected = false;
@@ -180,7 +216,7 @@ export class ObjectAlignModule {
       const isDiceStable = this.diceStableCount > this.diceLostThreshold;
 
       // track hand with dice
-      if (!landmarks) return;
+      if (!landmarks || !worldLandmarks) return;
 
       const thumb = landmarks[4];
       const index = landmarks[8];
@@ -196,28 +232,21 @@ export class ObjectAlignModule {
         this.smoothY = this.smoothValue(this.smoothY, currentY, 0.2);
       }
       
-      // orientation via rotate
-      const rawAngle = Math.atan2(index.y - thumb.y, index.x - thumb.x);
-      const rawDist = Math.hypot(index.x - thumb.x, index.y - thumb.y);
-
-      if (this.smoothAngle === 0) { 
-          this.smoothAngle = rawAngle; 
-          this.smoothDist = rawDist; 
-      }
+      // 3D orientation of dice between fingers
+      const targetQuat = this.computeDiceOrientation(worldLandmarks);
+      if (this.currentQuaternion.length() === 0) this.currentQuaternion.copy(targetQuat);
       
-      this.smoothAngle = this.smoothAngleLerp(this.smoothAngle, rawAngle, 0.15);
-      this.smoothDist = this.smoothValue(this.smoothDist, rawDist, 0.15);
-
+      // smooth transition
+      this.currentQuaternion.slerp(targetQuat, 0.25);
 
       // handle states
       if (this.state === "WAITING_FOR_ANCHOR") {
           if (isDiceStable && this.lastDiceScore > 0.40) {
               this.calibTimer++;
               if (this.calibTimer > this.calibThreshold) {
-                  this.baseAngle = this.smoothAngle;
-                  this.baseDist = this.smoothDist;
-                  this.state = "ACTIVE";
+                  this.baseQuaternion = this.currentQuaternion.clone().invert();
                   
+                  this.state = "ACTIVE";
                   if (this.instrEl) this.instrEl.innerText = "Match the orientation of the dice above!";
               }
           } else {
@@ -225,12 +254,11 @@ export class ObjectAlignModule {
           }
       } 
       else if (this.state === "ACTIVE") {
-          
-          let deltaAngle = this.smoothAngle - this.baseAngle;
-          while (deltaAngle > Math.PI) deltaAngle -= 2 * Math.PI; while (deltaAngle < -Math.PI) deltaAngle += 2 * Math.PI;
-          this.currentRoll = deltaAngle; 
-          const deltaDist = (this.smoothDist - this.baseDist) * 500;
-          this.currentPitch = deltaDist;
+          const relativeQuat = this.currentQuaternion.clone().multiply(this.baseQuaternion);
+          const relativeEuler = new THREE.Euler().setFromQuaternion(relativeQuat);
+          this.currentRoll = relativeEuler.z; 
+          this.currentPitch = relativeEuler.x;
+          //this.currentYaw = relativeEuler.y;
           
           this.checkTargetMatch();
       }
@@ -250,9 +278,11 @@ export class ObjectAlignModule {
   checkTargetMatch() {
       let dR = this.currentRoll - this.goalRoll;
       while (dR > Math.PI) dR -= 2*Math.PI; while (dR < -Math.PI) dR += 2*Math.PI;
+      
       let dP = this.currentPitch - this.goalPitch;
+      while (dP > Math.PI) dP -= 2*Math.PI; while (dP < -Math.PI) dP += 2*Math.PI;
 
-      if (Math.abs(dR) < 0.25 && Math.abs(dP) < 25) {
+      if (Math.abs(dR) < 0.25 && Math.abs(dP) < 0.35) {
           this.holdProgress += 0.05;
       } else {
           this.holdProgress = Math.max(0, this.holdProgress - 0.05);
@@ -281,9 +311,9 @@ export class ObjectAlignModule {
               ctx.restore();
           }
           if(this.calibTimer > 0) {
-             const p = this.calibTimer / this.calibThreshold;
-             ctx.beginPath(); ctx.arc(renderX, renderY, imgSize/2 + 20, -Math.PI/2, -Math.PI/2 + Math.PI*2*p); 
-             ctx.strokeStyle="#fbbf24"; ctx.lineWidth=6; ctx.stroke();
+              const p = this.calibTimer / this.calibThreshold;
+              ctx.beginPath(); ctx.arc(renderX, renderY, imgSize/2 + 20, -Math.PI/2, -Math.PI/2 + Math.PI*2*p); 
+              ctx.strokeStyle="#fbbf24"; ctx.lineWidth=6; ctx.stroke();
           }
       } 
       else {
@@ -308,7 +338,7 @@ export class ObjectAlignModule {
           ctx.fillText("TARGET", -targetX, targetY - 50);
           ctx.restore();
 
-          this.diceModel.rotation.set(this.goalPitch * 0.02, 0, this.goalRoll);
+          this.diceModel.rotation.set(this.goalPitch, 0, this.goalRoll);
           this.renderer.render(this.scene, this.camera);
           ctx.drawImage(this.virtualCanvas, targetX - targetSize/2, targetY - targetSize/2, targetSize, targetSize);
 
@@ -316,8 +346,12 @@ export class ObjectAlignModule {
           // 3d model of controlled dice
           const playerSize = 250; 
           const ringRadius = 130;
-
-          this.diceModel.rotation.set(this.currentPitch * 0.02, 0, this.currentRoll);
+          if (this.state === "ACTIVE" || this.state === "SUCCESS") {
+             const relativeQuat = this.currentQuaternion.clone().multiply(this.baseQuaternion);
+             this.diceModel.quaternion.copy(relativeQuat);
+          } else {
+             this.diceModel.rotation.set(0, 0, 0);
+          }
           this.renderer.render(this.scene, this.camera);
 
           ctx.save();
