@@ -129,17 +129,20 @@ class AppManager {
 
   async setState(newState) {
     console.log(`Transitioning to State ${newState}`);
+    
+    // Loop pausieren während Transition
+    const wasRunning = this.isRunning;
+    this.isRunning = false;
+    
     this.state = newState;
 
     if (newState === 1) {
-      // INIT PUZZLE
       this.loginView.classList.add("hidden");
       this.modal.classList.remove("hidden");
       this.spinner.classList.remove("hidden");
 
       if(this.refContainer) this.refContainer.classList.add("hidden")
 
-      // Start Camera if not running
       if (!this.video.srcObject) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
@@ -147,7 +150,7 @@ class AppManager {
           });
           this.video.srcObject = stream;
           await new Promise((r) => (this.video.onloadedmetadata = r));
-          this.video.play(); //
+          this.video.play();
         } catch (e) {
           this.instrEl.innerText = "Error: Camera access denied.";
           return;
@@ -155,8 +158,7 @@ class AppManager {
       }
 
       this.titleEl.innerText = "Step 1/2: Puzzle Solving";
-      this.instrEl.innerText =
-        "Pinch the puzzle pieces to solve the puzzle.";
+      this.instrEl.innerText = "Pinch the puzzle pieces to solve the puzzle.";
 
       await this.puzzleModule.init();
 
@@ -169,18 +171,25 @@ class AppManager {
       this.startTime = Date.now();
       this.isRunning = true;
       this.loop();
+      
     } else if (newState === 2) {
+      // Canvas sofort löschen
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      
       this.titleEl.innerText = "Task 2/2: Align the object with a dice";
       this.instrEl.innerText = "Loading the task - this may take a second...";
       this.spinner.classList.remove("hidden");
 
-      // hide puzzle image
       if(this.refContainer) this.refContainer.classList.add("hidden");
 
       await this.objectModule.init();
 
       this.spinner.classList.add("hidden");
-      this.startTime = Date.now(); // Reset timer for phase 2
+      this.startTime = Date.now();
+      
+      // Loop für State 2 starten
+      this.isRunning = true;
+      this.loop();
     } else if (newState === 3) {
       // DASHBOARD
       this.isRunning = false;
