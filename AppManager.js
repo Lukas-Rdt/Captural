@@ -1,10 +1,9 @@
 import { PuzzleModule } from "./puzzle.js";
 import { ObjectAlignModule } from "./objectAlign.js";
-import { updateDashboard } from "./dashboard.js"; // Wir müssen dashboard.js leicht anpassen!
+import { updateDashboard } from "./dashboard.js";
 
 class AppManager {
   constructor() {
-    // DOM Elements
     this.loginView = document.getElementById("login-view");
     this.dashboardView = document.getElementById("dashboard-view");
     this.modal = document.getElementById("captcha-modal");
@@ -23,15 +22,12 @@ class AppManager {
     this.instrEl = document.getElementById("captcha-instruction");
     this.spinner = document.getElementById("loading-spinner");
 
-    // Modules
     this.puzzleModule = new PuzzleModule(this.canvas);
     this.objectModule = new ObjectAlignModule(this.canvas);
 
-    // puzzle kram mehr
     this.refContainer = document.getElementById("reference-container");
     this.refImage = document.getElementById("puzzle-target-image");
 
-    // State
     this.state = 0; // 0=Login, 1=Puzzle, 2=Object, 3=Dashboard
     this.isRunning = false;
     this.startTime = 0;
@@ -66,18 +62,16 @@ class AppManager {
       .addEventListener("click", () => location.reload());
 
     document.addEventListener("keydown", (e) => {
-      // Nicht wechseln, wenn man gerade in einem Input-Feld schreibt
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
         return;
 
       switch (e.key) {
         case "1":
-          this.setState(1); // Puzzle Starten
+          this.setState(1); // Puzzle
           break;
         case "2":
-          // Falls Kamera noch nicht läuft (z.B. direkter Sprung von Login zu 2), muss sie gestartet werden
           if (!this.video.srcObject) {
-            this.setState(1); // Fallback zu 1, da dort Init passiert
+            this.setState(1); // Fallback zum puzzle
           } else {
             this.setState(2); // Object Align
           }
@@ -124,13 +118,12 @@ class AppManager {
   }
 
   async startCaptchaSequence() {
-    this.setState(1); // Go to Puzzle
+    this.setState(1);
   }
 
   async setState(newState) {
     console.log(`Transitioning to State ${newState}`);
     
-    // Loop pausieren während Transition
     const wasRunning = this.isRunning;
     this.isRunning = false;
     
@@ -173,7 +166,6 @@ class AppManager {
       this.loop();
       
     } else if (newState === 2) {
-      // Canvas sofort löschen
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       
       this.titleEl.innerText = "Task 2/2: Align the object with a dice";
@@ -187,31 +179,25 @@ class AppManager {
       this.spinner.classList.add("hidden");
       this.startTime = Date.now();
       
-      // Loop für State 2 starten
       this.isRunning = true;
       this.loop();
     } else if (newState === 3) {
-      // DASHBOARD
       this.isRunning = false;
 
-      // Save Object Stats
       const duration = (Date.now() - this.startTime) / 1000;
       this.sessionData.objectTime = duration;
       this.sessionData.totalTime =
         this.sessionData.puzzleTime + this.sessionData.objectTime;
       this.sessionData.passed = true;
 
-      // Stop Camera
       const tracks = this.video.srcObject.getTracks();
       tracks.forEach((track) => track.stop());
       this.video.srcObject = null;
 
-      // UI Switch
       this.modal.classList.add("hidden");
       this.dashboardView.classList.remove("hidden");
-      //document.body.style.overflow = "auto"; macht dashboard x-scrollable
+      //document.body.style.overflow = "auto";
 
-      // Render Dashboard
       updateDashboard(this.sessionData);
     }
   }
@@ -219,7 +205,6 @@ class AppManager {
   loop = () => {
     if (!this.isRunning) return;
 
-    // State Logic
     if (this.state === 1) {
       const isDone = this.puzzleModule.runStep(this.video);
       if (isDone) {
@@ -231,7 +216,6 @@ class AppManager {
           `Puzzle Done! Time: ${duration}s, Errors: ${this.sessionData.puzzleErrors}`
         );
 
-        // record puzzle name if available
         try {
           const src = this.puzzleModule.sourceImage && this.puzzleModule.sourceImage.src;
           this.sessionData.puzzleName = src ? src.split("/").pop() : "puzzle";
@@ -257,7 +241,6 @@ class AppManager {
   };
 }
 
-// Start App
 document.addEventListener("DOMContentLoaded", () => {
   new AppManager();
 });

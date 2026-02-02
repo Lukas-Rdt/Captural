@@ -1,20 +1,8 @@
-/* const performanceData = {
-  puzzleTime: 8.4, // Time for puzzle (seconds)
-  objectTime: 5.2, // Time for object alignment (seconds)
-  totalTime: 13.6, // Total time (seconds)
-  puzzleErrors: 2, // Errors in puzzle task
-  objectErrors: 1, // Errors in object alignment
-  puzzleAccuracy: 87, // Accuracy percentage for puzzle
-  objectAccuracy: 94, // Accuracy percentage for object
-  passed: true, // Captcha passed aka user verified?
-}; */
-
 import computeNaturalness from "./naturalCalc.js";
 
 export function updateDashboard(data) {
   const circumference = 2 * Math.PI * 54; // 339.292
 
-  // Update status badge
   const badge = document.getElementById("statusBadge");
   const statusText = document.getElementById("statusText");
   if (data.passed) {
@@ -25,7 +13,6 @@ export function updateDashboard(data) {
     statusText.textContent = "FAILED";
   }
 
-  // Compute and display naturalness percent
   try {
     const nat = computeNaturalness(data || {});
     const natPercent = nat.percent;
@@ -33,7 +20,6 @@ export function updateDashboard(data) {
 
     if (natEl) {
       natEl.textContent = `${natPercent}% Natural`;
-      // apply semantic class for styling/animation
       natEl.classList.remove(
         "naturalness-high",
         "naturalness-med",
@@ -50,7 +36,6 @@ export function updateDashboard(data) {
     console.error("Error updating naturalness:", e);
   }
 
-  // Save entry to leaderboard (recent first)
   try {
     const key = "captural_leaderboard";
     const board = JSON.parse(localStorage.getItem(key) || "[]");
@@ -65,7 +50,6 @@ export function updateDashboard(data) {
         (Number(data.objectErrors) || 0),
     };
     board.unshift(entry);
-    // keep recent 50
     if (board.length > 50) board.length = 50;
     localStorage.setItem(key, JSON.stringify(board));
     renderLeaderboard();
@@ -73,7 +57,6 @@ export function updateDashboard(data) {
     console.error("Error saving leaderboard:", e);
   }
 
-  // Animate circular progress
   setTimeout(() => {
     animateCircle(
       "puzzleCircle",
@@ -104,7 +87,6 @@ export function updateDashboard(data) {
     );
   }, 700);
 
-  // Update metrics
   setTimeout(() => {
     const pAcc = Number(data.puzzleAccuracy ?? data.objectAccuracy ?? 0);
     const oAcc = Number(data.objectAccuracy ?? data.puzzleAccuracy ?? 0);
@@ -118,7 +100,6 @@ export function updateDashboard(data) {
       `${Number(data.puzzleErrors) || 0} puzzle · ${Number(data.objectErrors) || 0} alignment`;
   }, 900);
 
-  // Update phase bars
   setTimeout(() => {
     updatePhaseBar(
       "puzzleBar",
@@ -142,7 +123,6 @@ export function updateDashboard(data) {
   }, 1400);
 }
 
-// Render leaderboard from localStorage
 function renderLeaderboard() {
   const key = "captural_leaderboard";
   const tbody = document.querySelector("#leaderboardTable tbody");
@@ -197,7 +177,6 @@ function animateCircle(circleId, valueId, value, max, circumference) {
 
   circle.style.strokeDashoffset = offset;
 
-  // Animate the number
   let current = 0;
   const duration = 1500;
   const startTime = Date.now();
@@ -220,7 +199,6 @@ function updatePhaseBar(barId, timeId, errorsId, time, maxTime, errors) {
   const bar = document.getElementById(barId);
   const percentage = (time / maxTime) * 100;
 
-  // Set color based on percentage
   if (percentage < 40) {
     bar.className = "phase-bar-fill fast";
   } else if (percentage < 70) {

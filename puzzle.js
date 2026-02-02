@@ -4,7 +4,6 @@ import {
   DrawingUtils,
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
-// --- KONFIGURATION ---
 const IMAGE_BASE_PATH = "./images/";
 const IMAGE_FILES = [
   "apple.webp",
@@ -20,7 +19,6 @@ const SNAP_DIST_THRESHOLD = 0.1; // 0-1 snap
 const SNAP_ROT_THRESHOLD = 0.5; // Radiant für rotation (~17 Grad)
 const PINCH_THRESHOLD = 0.08; // Abstand Daumen-Zeigefinger zum Greifen
 
-// --- HELPER CLASS: PUZZLE PIECE ---
 class PuzzlePiece {
   constructor(id, row, col, img) {
     this.id = id;
@@ -138,7 +136,6 @@ class PuzzlePiece {
   }
 }
 
-// --- MAIN MODULE CLASS ---
 export class PuzzleModule {
   constructor(canvasElement) {
     this.handLandmarker = null;
@@ -152,12 +149,7 @@ export class PuzzleModule {
     this.puzzleErrors = 0;
   }
 
-  /**
-   * Initialisiert MediaPipe und lädt Assets.
-   * Wird vom AppManager einmalig aufgerufen.
-   */
   async init() {
-    // 1. MediaPipe laden
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
     );
@@ -177,7 +169,6 @@ export class PuzzleModule {
 
   async loadPuzzleImage() {
     return new Promise((resolve) => {
-      // ZUFALLSWAHL: Ein zufälliges Bild aus der Liste picken
       const randomIndex = Math.floor(Math.random() * IMAGE_FILES.length);
       const randomImageSrc = IMAGE_BASE_PATH + IMAGE_FILES[randomIndex];
 
@@ -209,15 +200,9 @@ export class PuzzleModule {
     }
   }
 
-  /**
-   * Haupt-Update-Funktion. Wird vom AppManager Loop aufgerufen.
-   * @param {HTMLVideoElement} video - Der Video-Stream vom Manager
-   * @returns {boolean} true, wenn Puzzle gelöst ist
-   */
   runStep(video) {
     if (!this.handLandmarker) return false;
 
-    // 1. Canvas Größe anpassen falls nötig
     if (
       this.canvasElement.width !== video.videoWidth ||
       this.canvasElement.height !== video.videoHeight
@@ -228,22 +213,17 @@ export class PuzzleModule {
     const canvasW = this.canvasElement.width;
     const canvasH = this.canvasElement.height;
 
-    // 2. Landmarks erkennen
     let startTimeMs = performance.now();
     const results = this.handLandmarker.detectForVideo(video, startTimeMs);
 
-    // 3. Canvas bereinigen
     this.ctx.clearRect(0, 0, canvasW, canvasH);
 
-    // 4. Spiellogik ausführen
     if (results.landmarks) {
       this.updateGameLogic(results.landmarks, canvasW, canvasH);
     }
 
-    // 5. Zeichnen
     this.drawGridPlaceholder(canvasW, canvasH);
 
-    // Teile sortieren (gegriffene oben)
     const sortedPieces = [...this.puzzlePieces].sort((a, b) => {
       if (a.grabbedByHandId !== null) return 1;
       if (b.grabbedByHandId !== null) return -1;
@@ -252,17 +232,14 @@ export class PuzzleModule {
 
     sortedPieces.forEach((p) => p.draw(this.ctx, canvasW, canvasH));
 
-    // Hände zeichnen
     if (results.landmarks) {
       this.drawHands(results.landmarks);
     }
 
-    // 6. Prüfen ob gewonnen
     const allCorrect = this.puzzlePieces.every((piece) => piece.isCorrect());
     return allCorrect;
   }
 
-  // --- LOGIC HELPER ---
   updateGameLogic(landmarksArray, cw, ch) {
     if (landmarksArray.length === 0) return;
     for (let handIdx = 0; handIdx < landmarksArray.length; handIdx++) {
@@ -285,17 +262,14 @@ export class PuzzleModule {
 
       if (isPinching) {
         if (heldPiece) {
-          // Bewegen
           let newRot = angle - heldPiece.grabOffset.angle;
           heldPiece.x += (midX - heldPiece.grabOffset.x - heldPiece.x) * 0.5;
           heldPiece.y += (midY - heldPiece.grabOffset.y - heldPiece.y) * 0.5;
           heldPiece.rotation = newRot;
 
-          // Limits
           heldPiece.x = Math.max(0, Math.min(1, heldPiece.x));
           heldPiece.y = Math.max(0, Math.min(1, heldPiece.y));
         } else {
-          // Versuchen zu greifen
           const candidates = this.puzzlePieces.filter(
             (p) => p.grabbedByHandId === null && !p.isCorrect()
           );
@@ -327,7 +301,6 @@ export class PuzzleModule {
           }
         }
       } else {
-        // Loslassen
         if (heldPiece) {
           heldPiece.grabbedByHandId = null;
           this.checkSnap(heldPiece, cw, ch);
@@ -348,7 +321,6 @@ export class PuzzleModule {
 
     if (rotDiff > SNAP_ROT_THRESHOLD) return;
 
-    // Bester Slot finden
     let bestCandidate = null;
     let minDistance = Infinity;
 
@@ -367,7 +339,6 @@ export class PuzzleModule {
       }
     }
 
-    // Snappen ausführen
     if (bestCandidate) {
       const { r, c, x, y } = bestCandidate;
 
@@ -383,7 +354,6 @@ export class PuzzleModule {
         if (occupied.isCorrect()) {
           return;
         }
-        // Verdrängen
         occupied.isLocked = false;
         occupied.snappedRow = -1;
         occupied.snappedCol = -1;
@@ -392,7 +362,6 @@ export class PuzzleModule {
         occupied.rotation += Math.random() - 0.5;
       }
 
-      // Lock on
       p.isLocked = true;
       p.grabbedByHandId = null;
       p.rotation = targetRot;
@@ -417,7 +386,6 @@ export class PuzzleModule {
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(startX, startY, puzzleSize, puzzleSize);
 
-    // Gitterlinien
     this.ctx.beginPath();
     const step = puzzleSize / ROWS;
     for (let i = 1; i < ROWS; i++) {
