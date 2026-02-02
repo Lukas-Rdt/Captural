@@ -5,7 +5,7 @@ import { GLTFLoader } from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/l
 export class ObjectAlignModule {
 
   constructor() {
-    // setup task
+    // task and start setup
     this.canvasElement = document.getElementById("output_canvas");
     this.ctx = this.canvasElement.getContext("2d");
     this.statusTextElement = document.getElementById("alignment-status");
@@ -18,7 +18,7 @@ export class ObjectAlignModule {
     this.calibImgLoaded = false;
     this.calibImg.onload = () => { this.calibImgLoaded = true; };
 
-    // 3d setup via three.js
+    // 3d setup
     this.threeWidth = 400;
     this.threeHeight = 400;
     this.virtualCanvas = document.createElement('canvas');
@@ -32,13 +32,14 @@ export class ObjectAlignModule {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
     this.camera.position.z = 7;
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
     dirLight.position.set(2, 5, 5);
     this.scene.add(dirLight);
     const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
     backLight.position.set(-2, -5, -5);
     this.scene.add(backLight);
+
     this.diceModel = new THREE.Group();
     this.scene.add(this.diceModel);
     this.isModelLoaded = false;
@@ -62,31 +63,31 @@ export class ObjectAlignModule {
     // state
     this.isReady = false;
     this.isVerified = false;
+    this.state = "WAITING_FOR_ANCHOR";
 
     // randomized goal rotation
-    this.goalRoll = (0.5 + Math.random() * 0.8) * (Math.random() < 0.5 ? -1 : 1);
-    this.goalPitch = (0.3 + Math.random() * 0.4) * (Math.random() < 0.5 ? -1 : 1);
-    this.state = "WAITING_FOR_ANCHOR";
+    //this.goalRoll = (0.5 + Math.random() * 0.8) * (Math.random() < 0.5 ? -1 : 1);
+    //this.goalPitch = (0.3 + Math.random() * 0.4) * (Math.random() < 0.5 ? -1 : 1);
+    this.goalRoll = (0.35 + Math.random() * 0.45) * (Math.random() < 0.5 ? -1 : 1);
+    this.goalPitch = (0.25 + Math.random() * 0.30) * (Math.random() < 0.5 ? -1 : 1);
+
+    // timer/thresholds
     this.calibTimer = 0;
     this.calibThreshold = 30;
-
-    // stabilize
     this.diceStableCount = 0;
     this.maxStableCount = 10;
     this.diceLostThreshold = 5;
 
     // tracking
-    this.baseAngle = 0;
-    this.baseDist = 0;
-    this.smoothAngle = 0;
-    this.smoothDist = 0;
     this.smoothX = 0;
     this.smoothY = 0;
     this.currentRoll = 0;
     this.currentPitch = 0;
+    this.currentYaw = 0; // Hinzugefügt aus V2
     this.holdProgress = 0;
     this.lastDiceScore = 0;
     this.lastDiceLabel = "none";
+    
     this.currentQuaternion = new THREE.Quaternion();
     this.baseQuaternion = new THREE.Quaternion();
   }
@@ -133,8 +134,6 @@ export class ObjectAlignModule {
     }
     const width = this.canvasElement.width;
     const height = this.canvasElement.height;
-    
-    // dynmic center
     const screenCenter = { x: width / 2, y: height / 2 };
 
     // background
@@ -159,45 +158,37 @@ export class ObjectAlignModule {
     return this.isVerified;
   }
 
-  smoothAngleLerp(c, t, f) {
-      let d = t - c;
-      while (d > Math.PI) d -= 2*Math.PI; while (d < -Math.PI) d += 2*Math.PI;
-      return c + d * f;
-  }
   smoothValue(c, t, f) { return c + (t - c) * f; }
 
   // calculate rotation based on dice between fingers
   computeDiceOrientation(worldLandmarks) {
-      const wrist = worldLandmarks[0];
-      const thumb = worldLandmarks[4];
-      const index = worldLandmarks[8];
+      const v = i => new THREE.Vector3(
+        worldLandmarks[i].x,
+        worldLandmarks[i].y,
+        worldLandmarks[i].z
+      );
 
       // axis rotation relative to wirst and finger movements (roll, yaw)
-      const diceAxis = new THREE.Vector3(
-          index.x - thumb.x, 
-          index.y - thumb.y, 
-          index.z - thumb.z
-      ).normalize();
-      // pitch
-      const fingerMid = new THREE.Vector3(
-          (thumb.x + index.x) / 2,
-          (thumb.y + index.y) / 2,
-          (thumb.z + index.z) / 2
-      );
-      const handUp = new THREE.Vector3().subVectors(fingerMid, wrist).normalize();
+      const wrist = v(0);
+      const indexMCP = v(5);
+      const pinkyMCP = v(17);
+      const indexTip = v(8);
+      const xAxis = new THREE.Vector3()
+        .subVectors(indexMCP, pinkyMCP)
+        .normalize();
+      const yAxis = new THREE.Vector3()
+        .subVectors(indexTip, wrist)
+        .normalize();
+      const zAxis = new THREE.Vector3()
+        .crossVectors(xAxis, yAxis)
+        .normalize();
+      yAxis.crossVectors(zAxis, xAxis).normalize();
 
-      const xAxis = diceAxis.clone();
-      const zAxis = new THREE.Vector3().crossVectors(xAxis, handUp).normalize();
-      const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
-      const matrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
-      const q = new THREE.Quaternion().setFromRotationMatrix(matrix);
-      
-      // const adjustment = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1), -Math.PI/2);
-      // q.multiply(adjustment);
-      
-      return q;
+      const m = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      return new THREE.Quaternion().setFromRotationMatrix(m);
   }
 
+  // logic
   updateLogic(handRes, objRes, w, h) {
       const landmarks = handRes.landmarks && handRes.landmarks[0];
       const worldLandmarks = handRes.worldLandmarks && handRes.worldLandmarks[0];
@@ -223,7 +214,6 @@ export class ObjectAlignModule {
       const currentX = (thumb.x + index.x) / 2 * w;
       const currentY = (thumb.y + index.y) / 2 * h;
 
-      // smooth interaction
       if (this.smoothX === 0 && this.smoothY === 0) {
         this.smoothX = currentX;
         this.smoothY = currentY;
@@ -234,14 +224,16 @@ export class ObjectAlignModule {
       
       // 3D orientation of dice between fingers
       const targetQuat = this.computeDiceOrientation(worldLandmarks);
-      if (this.currentQuaternion.length() === 0) this.currentQuaternion.copy(targetQuat);
       
-      // smooth transition
-      this.currentQuaternion.slerp(targetQuat, 0.25);
+      if (this.currentQuaternion.length() === 0) {
+        this.currentQuaternion.copy(targetQuat);
+      } else {
+        this.currentQuaternion.slerp(targetQuat, 0.12);
+      }
+      this.currentQuaternion.normalize();
 
-      // handle states
       if (this.state === "WAITING_FOR_ANCHOR") {
-          if (isDiceStable && this.lastDiceScore > 0.40) {
+          if (isDiceStable && this.lastDiceScore > 0.35) {
               this.calibTimer++;
               if (this.calibTimer > this.calibThreshold) {
                   this.baseQuaternion = this.currentQuaternion.clone().invert();
@@ -255,16 +247,17 @@ export class ObjectAlignModule {
       } 
       else if (this.state === "ACTIVE") {
           const relativeQuat = this.currentQuaternion.clone().multiply(this.baseQuaternion);
-          const relativeEuler = new THREE.Euler().setFromQuaternion(relativeQuat);
+          const relativeEuler = new THREE.Euler().setFromQuaternion(relativeQuat, "YXZ");
+          
           this.currentRoll = relativeEuler.z; 
           this.currentPitch = relativeEuler.x;
-          //this.currentYaw = relativeEuler.y;
+          this.currentYaw = relativeEuler.y;
           
           this.checkTargetMatch();
       }
       
-      // visual feedback --> debug only
-      if (this.ctx) {
+      // visual debug
+      if (this.ctx && this.debugMode) {
           this.ctx.beginPath();
           this.ctx.moveTo(thumb.x * w, thumb.y * h);
           this.ctx.lineTo(index.x * w, index.y * h);
@@ -274,7 +267,7 @@ export class ObjectAlignModule {
       }
   }
 
-  // check position
+  // check position / match
   checkTargetMatch() {
       let dR = this.currentRoll - this.goalRoll;
       while (dR > Math.PI) dR -= 2*Math.PI; while (dR < -Math.PI) dR += 2*Math.PI;
@@ -312,7 +305,8 @@ export class ObjectAlignModule {
           }
           if(this.calibTimer > 0) {
               const p = this.calibTimer / this.calibThreshold;
-              ctx.beginPath(); ctx.arc(renderX, renderY, imgSize/2 + 20, -Math.PI/2, -Math.PI/2 + Math.PI*2*p); 
+              ctx.beginPath(); 
+              ctx.arc(renderX, renderY, imgSize/2 + 20, -Math.PI/2, -Math.PI/2 + Math.PI*2*p); 
               ctx.strokeStyle="#fbbf24"; ctx.lineWidth=6; ctx.stroke();
           }
       } 
@@ -338,6 +332,8 @@ export class ObjectAlignModule {
           ctx.fillText("TARGET", -targetX, targetY - 50);
           ctx.restore();
 
+          // screen ice
+          this.diceModel.quaternion.identity();
           this.diceModel.rotation.set(this.goalPitch, 0, this.goalRoll);
           this.renderer.render(this.scene, this.camera);
           ctx.drawImage(this.virtualCanvas, targetX - targetSize/2, targetY - targetSize/2, targetSize, targetSize);
@@ -345,22 +341,22 @@ export class ObjectAlignModule {
 
           // 3d model of controlled dice
           const playerSize = 250; 
-          const ringRadius = 130;
+          const ringRadius = 130; 
           if (this.state === "ACTIVE" || this.state === "SUCCESS") {
              const relativeQuat = this.currentQuaternion.clone().multiply(this.baseQuaternion);
              this.diceModel.quaternion.copy(relativeQuat);
           } else {
              this.diceModel.rotation.set(0, 0, 0);
-          }
+          }   
           this.renderer.render(this.scene, this.camera);
-
           ctx.save();
           ctx.translate(renderX, renderY);
           ctx.drawImage(this.virtualCanvas, -playerSize/2, -playerSize/2, playerSize, playerSize);
-          ctx.beginPath(); ctx.arc(0, 0, ringRadius, 0, 2*Math.PI); 
-          ctx.strokeStyle="rgba(255,255,255,0.1)"; ctx.lineWidth=2; ctx.stroke();
           
-          // indicate progress
+          // visual progress
+          ctx.beginPath(); ctx.arc(0, 0, ringRadius, 0, 2*Math.PI); 
+          ctx.strokeStyle="rgba(255,255,255,0.1)"; ctx.lineWidth=2; ctx.stroke(); 
+          // verify
           if (this.holdProgress > 0) {
               ctx.beginPath();
               ctx.arc(0, 0, ringRadius + 10, 0, Math.PI*2*this.holdProgress);
